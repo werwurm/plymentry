@@ -3,3 +3,5 @@ plymentry
 .cproject
 .settings
 .project
+*.dpp
+plymentry.unstripped
