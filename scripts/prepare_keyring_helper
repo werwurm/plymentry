@@ -1,0 +1,13 @@
+#!/bin/sh
+
+GPG_HOME=/etc/cryptroot_keyring
+GPG2=/usr/bin/gpg2
+
+do_gpg () {
+	$GPG2 --no-options --no-random-seed-file --no-default-keyring \
+	      --keyring $GPG_HOME/pubring.gpg \
+	      --secret-keyring $GPG_HOME/secring.gpg \
+	      --trustdb-name $GPG_HOME/trustdb.gpg "$@"
+}
+
+do_gpg "$@"

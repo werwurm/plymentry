@@ -1,0 +1,82 @@
+#!/bin/sh
+
+set -e
+
+PREREQ="cryptroot"
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case $1 in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+# Hooks for loading gnupg software and key into the initramfs
+
+# Check whether cryptroot hook has installed decrypt_gnupg script 
+#if [ ! -x ${DESTDIR}/lib/cryptsetup/scripts/decrypt_gnupg2 ] ; then
+#    exit 0
+#fi
+
+# Install cryptroot key files into initramfs
+keys=$(sed 's/^\(.*,\|\)key=//; s/,.*//' ${DESTDIR}/conf/conf.d/cryptroot)
+#keys=none
+
+if [ "${keys}" != "none" ]; then
+    if [ -z "${keys}" ]; then
+        echo "$0: Missing key files in ${DESTDIR}/conf/conf.d/cryptroot" >&2
+        cat ${DESTDIR}/conf/conf.d/cryptroot >&2
+        exit 1
+    fi
+    for key in ${keys} ; do
+	echo "WARNING: GnuPG key $key is copied to initramfs" >&2
+        if [ ! -d ${DESTDIR}/$(dirname ${key}) ] ; then
+            mkdir -p ${DESTDIR}/$(dirname ${key})
+        fi
+        cp ${key} ${DESTDIR}/${key}
+    done
+fi
+
+CRYPTROOT_KEYCHAIN=/etc/cryptroot_keyring
+
+if [ -d ${CRYPTROOT_KEYCHAIN} ]
+then
+	mkdir -p ${DESTDIR}/${CRYPTROOT_KEYCHAIN}
+	cp ${CRYPTROOT_KEYCHAIN}/pubring.gpg ${DESTDIR}/${CRYPTROOT_KEYCHAIN}
+	cp ${CRYPTROOT_KEYCHAIN}/secring.gpg ${DESTDIR}/${CRYPTROOT_KEYCHAIN}
+	cp ${CRYPTROOT_KEYCHAIN}/trustdb.gpg ${DESTDIR}/${CRYPTROOT_KEYCHAIN}
+fi
+
+# Install gnupg software
+copy_exec /usr/bin/gpg2
+copy_exec /usr/bin/gpg-agent
+copy_exec /usr/lib/gnupg2/scdaemon
+# copy_exec /usr/local/bin/plymentry /usr/bin/plymentry
+copy_exec /usr/local/bin/plymentry /usr/bin/pinentry
+
+# mkdir -p /lib/cryptsetup/scripts
+# copy_exec /lib/cryptsetup/scripts/decrypt_gnupg2
+
+# borrowed the following lines from the cryptopensc hook
+# since scdaemon needs pcscd
+
+# Install directories needed by smartcard reading daemon, command, and
+# key-script
+for dir in usr/lib/pcsc var/run tmp ; do
+    if [ ! -d ${DESTDIR}/${dir} ] ; then mkdir -p ${DESTDIR}/${dir} ; fi
+done
+
+# Install pcscd daemon, drivers, conf file, and include libgcc as well since
+# pcscd utilizes pthread_cancel
+copy_exec /usr/sbin/pcscd
+cp -r /usr/lib/pcsc ${DESTDIR}/usr/lib
+cp -r /etc/reader.conf.d ${DESTDIR}/etc
+
+exit 0

@@ -1,0 +1,28 @@
+#!/bin/sh
+
+GPG_HOME=/etc/cryptroot_keyring
+GPG2=/usr/bin/gpg2
+
+do_gpg () {
+	$GPG2 --no-options --batch --no-random-seed-file --no-default-keyring \
+	      --keyring $GPG_HOME/pubring.gpg \
+	      --secret-keyring $GPG_HOME/secring.gpg \
+	      --trustdb-name $GPG_HOME/trustdb.gpg "$@"
+}
+
+decrypt_gpg () {
+	do_gpg -d $1
+}
+
+if [ ! -x $GPG2 ]; then
+	echo "$0: $GPG2 is not available" >&2
+	exit 1
+fi
+
+if [ -z "$1" ]; then
+	echo "$0: missing key as argument" >&2
+	exit 1
+fi
+
+decrypt_gpg $1 2> /dev/null
+exit $?
