@@ -10,6 +10,7 @@
 #include <functional>
 #include <ostream>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -69,6 +70,24 @@ const std::string & getCmdString(const pe_command cmd){
 }
 #undef DEFINE_PE_CMD
 
+static std::string decode0x25(const std::string & str){
+    std::stringstream s;
+    for (auto c = str.begin(); c != str.end(); ++c ){
+	if (*c == '%'){
+	    std::stringstream parse;
+	    unsigned x;
+	    parse << *(++c); parse << *(++c);
+	    parse >> std::hex >> x;
+	    // drop if no ascii char
+	    if(x & 0x80) continue;
+	    s << (char)x;
+	} else {
+	    s << *c;
+	}
+    }
+    return s.str();
+}
+
 class PEPipeServer{
 public:
     typedef std::function<void(const std::string &, std::ostream &)> handler_t;
@@ -107,7 +126,7 @@ public:
 		out << "ERR " << UNKNOWN_COMMAND << " unknown command" << std::endl;
 	    } else {
 		try{
-		    handler->second(arg, std::cout);
+		    handler->second(decode0x25(arg), std::cout);
 		} catch (std::runtime_error & e){
 		    log << e.what() << std::endl;
 		    out << "ERR " << SERVER_FAULT << " server fault" << std::endl;
