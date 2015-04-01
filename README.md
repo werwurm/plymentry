@@ -44,19 +44,19 @@ make sure it has appropriate access rights.
 
 and install your keyring there. The script `scripts/prepare_keyring_helper`
 behaves like the gpg2 binary only that it does not touch your `~/.gnupg`
-directory but instead uses `/etc/cryptroot_keyring`. So
+directory but instead creates and uses `$PWD/temp_gpg_home`. So
 
-    sudo scripts/prepare_keyring_helper --import <your pub key>
-    sudo scripts/prepare_keyring_helper --card-status
+    scripts/prepare_keyring_helper --import <your pub key>
+    scripts/prepare_keyring_helper --card-status
 
-should install your public key in `/etc/cryptroot_keyring/pubring.gpg` and
-the secret key card-stubs in `/etc/cryptroot_keyring/secring.gpg`. It also
-places `/etc/cryptroot_keyring/trustdb.gpg`.
+should install your public key in `$PWD/temp_gpg_home/pubring.gpg` and
+the secret key card-stubs in `$PWD/temp_gpg_home/secring.gpg`. It also
+places `$PWD/temp_gpg_home/trustdb.gpg`.
 Now create the keyfile for example like this
 
     head -c 256 /dev/random | gpg2 -e -r "you <your@email.address>" > keyfile.gpg
 
-or however you see fit. Place the keyfile into `/etc/cryptroot_keyring`.
+or however you see fit. Place the keyfile along with the content of `$PWD/temp_gpg_home` into `/etc/cryptroot_keyring`.
 
 ## Preparing the Luks partition
 Use cryptsetup to add a new keyslot to your Luks-container where you use the

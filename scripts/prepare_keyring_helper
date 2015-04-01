@@ -1,7 +1,15 @@
 #!/bin/sh
 
-GPG_HOME=/etc/cryptroot_keyring
+GPG_HOME=temp_gpg_home
 GPG2=/usr/bin/gpg2
+
+if [ -e "$GPG_HOME" -a ! -d "$GPG_HOME" ]
+then
+	echo "\"$GPG_HOME\" is not a directory"
+	exit 1
+fi
+
+mkdir -p $GPG_HOME
 
 do_gpg () {
 	$GPG2 --no-options --no-random-seed-file --no-default-keyring \
